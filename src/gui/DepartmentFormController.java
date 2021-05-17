@@ -1,8 +1,11 @@
 package gui;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import db.DbException;
+import gui.listeners.DataChangeListener;
 import gui.util.Alerts;
 import gui.util.Constraints;
 import javafx.event.ActionEvent;
@@ -20,9 +23,10 @@ public class DepartmentFormController implements Initializable{
 
 	private Department entitiy;
 	private DepartmentServices service;
+	private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
 	
 	@FXML
-	private TextField txtId;
+	private TextField txtId; 
 	
 	@FXML
 	private TextField txtName; 
@@ -44,6 +48,10 @@ public class DepartmentFormController implements Initializable{
 		this.service = service;
 	}
 	
+	public void subscribeDataChangeListener(DataChangeListener listener) {
+		dataChangeListeners.add(listener);
+	}
+	
 	@FXML
 	public void onBtSaveAction(ActionEvent event) {
 		if(entitiy == null) {
@@ -55,12 +63,20 @@ public class DepartmentFormController implements Initializable{
 		try {
 			entitiy = getFormData();
 			service.saveOrUpdate(entitiy);
-			gui.util.Utils.currenceStage(event);
+			notifyDataChangeListeners();
+			gui.util.Utils.currenceStage(event).close();
 		}
 		catch(DbException e) {
 			Alerts.showAlert("Error saving object", null, e.getMessage(), AlertType.ERROR);
 		}
 	}
+	private void notifyDataChangeListeners() {
+		for(DataChangeListener listener : dataChangeListeners) {
+			listener.onDataChange();
+		}
+		
+	}
+
 	private Department getFormData() {
 		Department obj = new Department();
 		
@@ -73,7 +89,7 @@ public class DepartmentFormController implements Initializable{
 	@FXML
 	public void onBtCancelAction(ActionEvent event) {
 		System.out.println("onBtCancelAction");
-		gui.util.Utils.currenceStage(event);
+		gui.util.Utils.currenceStage(event).close();
 	}
 	
 	@Override
